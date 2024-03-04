@@ -1,6 +1,11 @@
 class FriendsController < ApplicationController
-  before_action :set_friend, only: %i[ :show :edit :update,  :destroy ]
-  before_action :authenticate_user!, except: %i[:index, :show]
+  before_action :set_friend, only: [:show, :edit, :update, :destroy]
+  before_action :authenticate_user!, except: [:index, :show]
+  before_action :correct_user, only: [:edit, :update, :destroy]
+
+  # before_action :set_friend, only: [:show, :edit, :update, :destroy]
+  # before_action :authenticate_user!, except: [:index, :show]
+  # before_action :correct_user, only: [:edit, :update, :destroy]
   # GET /friends or /friends.json
   def index
     @friends = Friend.all
@@ -12,7 +17,8 @@ class FriendsController < ApplicationController
 
   # GET /friends/new
   def new
-    @friend = Friend.new
+    # @friend = Friend.new
+    @friend = current_user.friends.build
   end
 
   # GET /friends/1/edit
@@ -21,7 +27,7 @@ class FriendsController < ApplicationController
 
   # POST /friends or /friends.json
   def create
-    @friend = Friend.new(friend_params)
+    # @friend = Friend.new(friend_params)
     @friend = current_user.friends.build(friend_params)
     respond_to do |format|
       if @friend.save
@@ -41,7 +47,7 @@ class FriendsController < ApplicationController
         format.html { redirect_to friend_url(@friend), notice: "Friend was successfully updated." }
         format.json { render :show, status: :ok, location: @friend }
       else
-        format.html { render :edit, status: :unprocessable_entity }
+        format.html { render :edit }
         format.json { render json: @friend.errors, status: :unprocessable_entity }
       end
     end
@@ -49,12 +55,17 @@ class FriendsController < ApplicationController
 
   # DELETE /friends/1 or /friends/1.json
   def destroy
-    @friend.destroy!
+    @friend.destroy
 
     respond_to do |format|
       format.html { redirect_to friends_url, notice: "Friend was successfully DELETED." }
       format.json { head :no_content }
     end
+  end
+
+  def correct_user
+    @friend = current_user.friends.find_by(id: params[:id])
+    redirect_to friends_path, notice: "Not Authorized To Edit This Friend" if @friend.nil?
   end
 
   private
